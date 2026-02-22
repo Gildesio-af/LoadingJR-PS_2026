@@ -1,4 +1,4 @@
-package com.loandingjr.chat.dto;
+package com.loandingjr.chat.dto.security;
 
 public record LoginRequest(
         String username,

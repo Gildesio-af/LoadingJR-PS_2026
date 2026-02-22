@@ -1,7 +1,7 @@
 package com.loandingjr.chat.controller;
 
-import com.loandingjr.chat.dto.JwtResponse;
-import com.loandingjr.chat.dto.LoginRequest;
+import com.loandingjr.chat.dto.security.JwtResponse;
+import com.loandingjr.chat.dto.security.LoginRequest;
 import com.loandingjr.chat.security.Auth0JwtTokenProvider;
 import com.loandingjr.chat.security.CustomUserDetails;
 import jakarta.validation.Valid;
