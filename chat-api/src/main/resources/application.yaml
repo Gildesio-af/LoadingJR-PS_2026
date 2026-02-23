@@ -1,6 +1,9 @@
 spring:
   application:
     name: Chat System Loading
+  output:
+    ansi:
+        enabled: ALWAYS
 
   threads:
     virtual:
@@ -28,6 +31,9 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
+ai:
+  gemini:
+    api-key: ${GOOGLE_API_KEY}
 
 app:
   jwtSecret: ${JWTSECRET:UmaSenhaMuitoLongaEMuitoSeguraParaOAlgoritmoFuncionarCorretamente123456}
