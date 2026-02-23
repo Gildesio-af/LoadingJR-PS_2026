@@ -17,6 +17,23 @@ import java.time.LocalDateTime;
 @Transactional
 public class ChatService {
     private final ChatRepository chatRepository;
+    private final AiIntegrationService aiIntegrationService;
+
+    @Transactional(readOnly = true)
+    public boolean isChatActive(String chatId) {
+        return chatRepository.isChatActive(chatId);
+    }
+
+    public void updateAiReport(String chatId, String aiReport) {
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat with ID " + chatId + " does not exist"));
+
+        if (chat.getStatus() != ChatStatus.CLOSED)
+            throw new IllegalStateException("AI report can only be updated for closed chats");
+
+        chat.setAiReport(aiReport);
+        chatRepository.save(chat);
+    }
 
     public ChatResponseDTO requestChat(String initiatorId, ChatRequestDTO chatRequestDTO) {
         if (chatRepository.isUserBusy(initiatorId))
@@ -54,11 +71,7 @@ public class ChatService {
 
         chat.setStatus(ChatStatus.CLOSED);
         chat.setClosedAt(LocalDateTime.now());
-        //TODO: trigger AI report generation asynchronously here
+        aiIntegrationService.generateAndSaveReport(chatId);
         chatRepository.save(chat);
-    }
-
-    public boolean isChatActive(String chatId) {
-        return chatRepository.isChatActive(chatId);
     }
 }

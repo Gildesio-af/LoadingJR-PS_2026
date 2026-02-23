@@ -5,7 +5,6 @@ import com.loandingjr.chat.dto.chat.ChatResponseDTO;
 import com.loandingjr.chat.security.CustomUserDetails;
 import com.loandingjr.chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;

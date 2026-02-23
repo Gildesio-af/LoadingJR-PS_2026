@@ -29,4 +29,10 @@ public class UserConverter {
         if (updateDTO.username() != null) user.setUsername(updateDTO.username());
         if (updateDTO.email() != null) user.setEmail(updateDTO.email());
     }
+
+    public static User idToModel(String userId) {
+        return User.builder()
+                .id(userId)
+                .build();
+    }
 }

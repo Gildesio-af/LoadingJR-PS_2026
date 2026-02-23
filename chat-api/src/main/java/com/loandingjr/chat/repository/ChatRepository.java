@@ -9,8 +9,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface ChatRepository extends JpaRepository<Chat, String> {
-    boolean existsById(String id);
-
     @Query("""
         SELECT c.id,
                 c.status,
