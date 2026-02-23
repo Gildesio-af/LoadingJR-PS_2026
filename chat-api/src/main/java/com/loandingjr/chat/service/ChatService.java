@@ -2,11 +2,15 @@ package com.loandingjr.chat.service;
 
 import com.loandingjr.chat.dto.chat.ChatRequestDTO;
 import com.loandingjr.chat.dto.chat.ChatResponseDTO;
+import com.loandingjr.chat.dto.message.MessageResponseDTO;
 import com.loandingjr.chat.model.Chat;
 import com.loandingjr.chat.model.enums.ChatStatus;
+import com.loandingjr.chat.model.specifications.ChatResponseProjection;
 import com.loandingjr.chat.repository.ChatRepository;
 import com.loandingjr.chat.shared.utils.ChatConverter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +21,7 @@ import java.time.LocalDateTime;
 @Transactional
 public class ChatService {
     private final ChatRepository chatRepository;
+    private final MessageService messageService;
     private final AiIntegrationService aiIntegrationService;
 
     @Transactional(readOnly = true)
@@ -24,15 +29,13 @@ public class ChatService {
         return chatRepository.isChatActive(chatId);
     }
 
-    public void updateAiReport(String chatId, String aiReport) {
-        Chat chat = chatRepository.findById(chatId)
+    public ChatResponseDTO getChatById(String chatId, Pageable pageable) {
+        ChatResponseProjection chat = chatRepository.findSpecById(chatId)
                 .orElseThrow(() -> new IllegalArgumentException("Chat with ID " + chatId + " does not exist"));
 
-        if (chat.getStatus() != ChatStatus.CLOSED)
-            throw new IllegalStateException("AI report can only be updated for closed chats");
+        Page<MessageResponseDTO> messages = messageService.getChatHistory(chatId, pageable);
 
-        chat.setAiReport(aiReport);
-        chatRepository.save(chat);
+        return ChatConverter.modelToResponse(chat, messages);
     }
 
     public ChatResponseDTO requestChat(String initiatorId, ChatRequestDTO chatRequestDTO) {

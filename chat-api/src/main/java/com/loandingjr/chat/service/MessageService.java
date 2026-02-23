@@ -31,7 +31,6 @@ public class MessageService {
                 .map(MessageConverter::modelToResponse);
     }
 
-
     public String getFormattedHistoryForAi(String chatId) {
         List<Message> messages = messageRepository.findByChatIdOrderBySentAtAsc(chatId);
 

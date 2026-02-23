@@ -5,6 +5,9 @@ import com.loandingjr.chat.dto.chat.ChatResponseDTO;
 import com.loandingjr.chat.security.CustomUserDetails;
 import com.loandingjr.chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +17,12 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ChatController {
     private final ChatService chatService;
+
+    @GetMapping("/{chatId}")
+    public ResponseEntity<ChatResponseDTO> getChatById(@PathVariable String chatId,
+                                                       @PageableDefault(size = 20, sort = "sentAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(chatService.getChatById(chatId, pageable));
+    }
 
     @PostMapping
     public ResponseEntity<ChatResponseDTO> createChat(@RequestBody ChatRequestDTO request,

@@ -13,6 +13,7 @@ public class MessageConverter {
         return MessageResponseDTO.builder()
                 .id(message.getId())
                 .senderId(message.getSender().getId())
+                .senderUsername(message.getSender().getUsername())
                 .content(message.getContent())
                 .sentAt(message.getSentAt())
                 .build();

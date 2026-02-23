@@ -1,7 +1,7 @@
 package com.loandingjr.chat.repository;
 
 import com.loandingjr.chat.model.Chat;
-import com.loandingjr.chat.model.specifications.ChatResponseSpec;
+import com.loandingjr.chat.model.specifications.ChatResponseProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,19 +10,19 @@ import java.util.Optional;
 
 public interface ChatRepository extends JpaRepository<Chat, String> {
     @Query("""
-        SELECT c.id,
-                c.status,
+        SELECT c.id AS id,
+                c.status AS status,
                 u1.username AS initiatorUsername,
                 u2.username AS participantUsername,
-                c.createdAt,
-                c.closedAt,
-                c.aiReport
+                c.createdAt AS createdAt,
+                c.closedAt AS closedAt,
+                c.aiReport AS aiReport
         FROM Chat c
         JOIN c.initiator u1 ON c.initiator.id = u1.id
         JOIN c.participant u2 ON c.participant.id = u2.id
         WHERE c.id = :id
         """)
-    Optional<ChatResponseSpec> findSpecById(String id);
+    Optional<ChatResponseProjection> findSpecById(String id);
 
     @Query("""
         SELECT COUNT(c) > 0 FROM Chat c 
