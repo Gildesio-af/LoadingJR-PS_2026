@@ -4,9 +4,11 @@ import com.loandingjr.chat.dto.chat.ChatRequestDTO;
 import com.loandingjr.chat.dto.chat.ChatResponseDTO;
 import com.loandingjr.chat.dto.message.MessageResponseDTO;
 import com.loandingjr.chat.model.Chat;
+import com.loandingjr.chat.model.User;
 import com.loandingjr.chat.model.enums.ChatStatus;
 import com.loandingjr.chat.model.specifications.ChatResponseProjection;
 import com.loandingjr.chat.repository.ChatRepository;
+import com.loandingjr.chat.repository.UserRepository;
 import com.loandingjr.chat.shared.utils.ChatConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,6 +23,7 @@ import java.time.LocalDateTime;
 @Transactional
 public class ChatService {
     private final ChatRepository chatRepository;
+    private final UserRepository userRepository;
     private final MessageService messageService;
     private final AiIntegrationService aiIntegrationService;
 
@@ -44,7 +47,15 @@ public class ChatService {
         else if (chatRepository.isUserBusy(chatRequestDTO.participantId()))
             throw new IllegalStateException("User with ID " + chatRequestDTO.participantId() + " is already in an active chat");
 
+        User sender = userRepository.findById(initiatorId)
+                .orElseThrow(() -> new IllegalArgumentException("User with ID " + initiatorId + " does not exist"));
+        User recipient = userRepository.findById(chatRequestDTO.participantId())
+                .orElseThrow(() -> new IllegalArgumentException("User with ID " + chatRequestDTO.participantId() + " does not exist"));
+
         Chat newChat = ChatConverter.requestToModel(initiatorId, chatRequestDTO.participantId());
+        newChat.setInitiator(sender);
+        newChat.setParticipant(recipient);
+
         return ChatConverter.modelToResponse(chatRepository.save(newChat));
     }
 

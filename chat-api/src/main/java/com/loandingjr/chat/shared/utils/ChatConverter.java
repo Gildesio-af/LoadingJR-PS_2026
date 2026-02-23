@@ -28,6 +28,7 @@ public class ChatConverter {
     public static ChatResponseDTO modelToResponse(Chat chat) {
         return ChatResponseDTO.builder()
                 .id(chat.getId())
+                .status(chat.getStatus())
                 .initiatorUsername(chat.getInitiator().getUsername())
                 .participantUsername(chat.getParticipant().getUsername())
                 .aiReport(chat.getAiReport())
