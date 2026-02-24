@@ -4,6 +4,8 @@ import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
 import com.loandingjr.chat.model.Chat;
 import com.loandingjr.chat.repository.ChatRepository;
+import com.loandingjr.chat.shared.exception.AiResponseException;
+import com.loandingjr.chat.shared.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,13 +51,13 @@ public class AiIntegrationService {
 
         } catch (Exception e) {
             log.error(e.getMessage());
-            updateAiReport(chatId, "Error generating AI report");
+            throw new AiResponseException("Failed to generate AI report for chat ID: " + chatId);
         }
     }
 
     private void updateAiReport(String chatId, String report) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Chat", chatId));
         chat.setAiReport(report);
         chatRepository.save(chat);
     }

@@ -9,6 +9,10 @@ import com.loandingjr.chat.model.enums.ChatStatus;
 import com.loandingjr.chat.model.specifications.ChatResponseProjection;
 import com.loandingjr.chat.repository.ChatRepository;
 import com.loandingjr.chat.repository.UserRepository;
+import com.loandingjr.chat.shared.exception.ChatStatusException;
+import com.loandingjr.chat.shared.exception.EntityNotFoundException;
+import com.loandingjr.chat.shared.exception.UserChatAccessException;
+import com.loandingjr.chat.shared.exception.UserAlreadyIsInChatException;
 import com.loandingjr.chat.shared.utils.ChatConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,7 +38,7 @@ public class ChatService {
 
     public ChatResponseDTO getChatById(String chatId, Pageable pageable) {
         ChatResponseProjection chat = chatRepository.findSpecById(chatId)
-                .orElseThrow(() -> new IllegalArgumentException("Chat with ID " + chatId + " does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("Chat", chatId));
 
         Page<MessageResponseDTO> messages = messageService.getChatHistory(chatId, pageable);
 
@@ -43,14 +47,14 @@ public class ChatService {
 
     public ChatResponseDTO requestChat(String initiatorId, ChatRequestDTO chatRequestDTO) {
         if (chatRepository.isUserBusy(initiatorId))
-            throw new IllegalStateException("User with ID " + initiatorId + " is already in an active chat");
+            throw new UserAlreadyIsInChatException("User with ID " + initiatorId + " is already in an active chat");
         else if (chatRepository.isUserBusy(chatRequestDTO.participantId()))
-            throw new IllegalStateException("User with ID " + chatRequestDTO.participantId() + " is already in an active chat");
+            throw new UserAlreadyIsInChatException("User with ID " + chatRequestDTO.participantId() + " is already in an active chat");
 
         User sender = userRepository.findById(initiatorId)
-                .orElseThrow(() -> new IllegalArgumentException("User with ID " + initiatorId + " does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("User", initiatorId));
         User recipient = userRepository.findById(chatRequestDTO.participantId())
-                .orElseThrow(() -> new IllegalArgumentException("User with ID " + chatRequestDTO.participantId() + " does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("User", chatRequestDTO.participantId()));
 
         Chat newChat = ChatConverter.requestToModel(initiatorId, chatRequestDTO.participantId());
         newChat.setInitiator(sender);
@@ -61,13 +65,13 @@ public class ChatService {
 
     public void acceptChat(String chatId, String participantId) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new IllegalArgumentException("Chat with ID " + chatId + " does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("Chat with ID " + chatId + " does not exist"));
 
         if (chat.getStatus() != ChatStatus.PENDING)
-            throw new IllegalStateException("Chat with ID " + chatId + " is not in a pending state");
+            throw new ChatStatusException("Chat with ID " + chatId + " is not in a pending state");
 
         if (!chat.getParticipant().getId().equals(participantId))
-            throw new IllegalArgumentException("User with ID " + participantId + " is not the participant of this chat");
+            throw new UserChatAccessException("User with ID " + participantId + " is not the participant of this chat");
 
         chat.setStatus(ChatStatus.ACTIVE);
         chatRepository.save(chat);
@@ -75,13 +79,13 @@ public class ChatService {
 
     public void closeChat(String chatId, String userId) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new IllegalArgumentException("Chat with ID " + chatId + " does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("Chat", chatId));
 
         if (chat.getStatus() != ChatStatus.ACTIVE)
-            throw new IllegalStateException("Chat with ID " + chatId + " is not in an active state");
+            throw new ChatStatusException("Chat with ID " + chatId + " is not active and cannot be closed");
 
         if (!chat.getInitiator().getId().equals(userId) && !chat.getParticipant().getId().equals(userId))
-            throw new IllegalArgumentException("User with ID " + userId + " is not a participant of this chat");
+            throw new UserChatAccessException("User with ID " + userId + " is not the participant of this chat");
 
         chat.setStatus(ChatStatus.CLOSED);
         chat.setClosedAt(LocalDateTime.now());

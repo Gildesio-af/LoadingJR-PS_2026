@@ -3,6 +3,7 @@ package com.loandingjr.chat.security;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.loandingjr.chat.shared.exception.InvalidAuthenticationException;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -32,7 +33,7 @@ public class Auth0JwtTokenProvider {
 
     public String generateToken(Authentication authentication) {
         if (!(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
-            throw new RuntimeException("Principal is not an instance of CustomUserDetails"); //TODO: Create custom exception
+            throw new InvalidAuthenticationException("Invalid authentication principal");
         }
         return generateToken(userDetails);
     }
@@ -75,7 +76,7 @@ public class Auth0JwtTokenProvider {
 
             return verifier.getSubject();
         } catch (JWTVerificationException ex) {
-            throw new RuntimeException("Invalid token"); //TODO: Create custom exception
+            throw new InvalidAuthenticationException("Invalid JWT token: " + ex.getMessage());
         }
     }
 }

@@ -5,6 +5,7 @@ import com.loandingjr.chat.dto.user.UserResponseDTO;
 import com.loandingjr.chat.dto.user.UserUpdateDTO;
 import com.loandingjr.chat.model.User;
 import com.loandingjr.chat.repository.UserRepository;
+import com.loandingjr.chat.shared.exception.EntityNotFoundException;
 import com.loandingjr.chat.shared.utils.UserConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,7 +23,7 @@ public class UserService {
 
     public UserResponseDTO getUserById(String id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User", id));
         return UserConverter.modelToResponse(user);
     }
 
@@ -33,7 +34,7 @@ public class UserService {
 
     public UserResponseDTO getUserByEmail(String email) {
         User user = userRepository.findByEmailContainingIgnoreCase(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User with email: " + email));
         return UserConverter.modelToResponse(user);
     }
 
@@ -48,7 +49,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO updateUser(String id, UserUpdateDTO updateDTO) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User", id));
         UserConverter.updateUserFromDto(user, updateDTO);
         if (updateDTO.password() != null) {
             user.setPassword(encoder.encode(updateDTO.password()));
@@ -61,6 +62,6 @@ public class UserService {
     public void deleteUser(String id) {
         int rowsAffected = userRepository.deactivateUserById(id);
 
-        if (rowsAffected == 0) throw new RuntimeException("User not found");
+        if (rowsAffected == 0) throw new EntityNotFoundException("User", id);
     }
 }

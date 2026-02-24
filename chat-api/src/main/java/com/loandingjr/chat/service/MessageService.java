@@ -9,6 +9,8 @@ import com.loandingjr.chat.model.enums.ChatStatus;
 import com.loandingjr.chat.repository.ChatRepository;
 import com.loandingjr.chat.repository.MessageRepository;
 import com.loandingjr.chat.repository.UserRepository;
+import com.loandingjr.chat.shared.exception.ChatStatusException;
+import com.loandingjr.chat.shared.exception.EntityNotFoundException;
 import com.loandingjr.chat.shared.utils.MessageConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -52,12 +54,12 @@ public class MessageService {
     @Transactional
     public MessageResponseDTO sendMessage(String chatId, MessageRequestDTO request, String senderId) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new IllegalArgumentException("Chat with ID " + chatId + " does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("Chat", chatId));
         User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new IllegalArgumentException("User with ID " + senderId + " does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("User", senderId));
 
         if (chat.getStatus() != ChatStatus.ACTIVE)
-            throw new IllegalStateException("Cannot send message to a chat that is not active");
+            throw new ChatStatusException("Cannot send message. Chat with ID " + chatId + " is not active.");
 
         Message message = MessageConverter.requestToModel(request, chatId);
         message.setSender(sender);
