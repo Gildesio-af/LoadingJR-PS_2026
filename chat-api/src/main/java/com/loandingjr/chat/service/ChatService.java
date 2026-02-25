@@ -15,6 +15,7 @@ import com.loandingjr.chat.shared.exception.UserChatAccessException;
 import com.loandingjr.chat.shared.exception.UserAlreadyIsInChatException;
 import com.loandingjr.chat.shared.utils.ChatConverter;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,9 @@ public class ChatService {
     }
 
     public ChatResponseDTO requestChat(String initiatorId, ChatRequestDTO chatRequestDTO) {
+        User recipient = userRepository.findById(chatRequestDTO.participantId())
+                .orElseThrow(() -> new EntityNotFoundException("User", chatRequestDTO.participantId()));
+
         if (chatRepository.isUserBusy(initiatorId))
             throw new UserAlreadyIsInChatException("User with ID " + initiatorId + " is already in an active chat");
         else if (chatRepository.isUserBusy(chatRequestDTO.participantId()))
@@ -53,8 +57,7 @@ public class ChatService {
 
         User sender = userRepository.findById(initiatorId)
                 .orElseThrow(() -> new EntityNotFoundException("User", initiatorId));
-        User recipient = userRepository.findById(chatRequestDTO.participantId())
-                .orElseThrow(() -> new EntityNotFoundException("User", chatRequestDTO.participantId()));
+
 
         Chat newChat = ChatConverter.requestToModel(initiatorId, chatRequestDTO.participantId());
         newChat.setInitiator(sender);
@@ -72,6 +75,9 @@ public class ChatService {
 
         if (!chat.getParticipant().getId().equals(participantId))
             throw new UserChatAccessException("User with ID " + participantId + " is not the participant of this chat");
+
+        if (chatRepository.isUserBusy(participantId))
+            throw new UserAlreadyIsInChatException("User with ID " + participantId + " is already in an active chat");
 
         chat.setStatus(ChatStatus.ACTIVE);
         chatRepository.save(chat);
@@ -91,5 +97,10 @@ public class ChatService {
         chat.setClosedAt(LocalDateTime.now());
         aiIntegrationService.generateAndSaveReport(chatId);
         chatRepository.save(chat);
+    }
+
+    public @Nullable Page<ChatResponseDTO> getPendingChatForUser(String id, Pageable pageable) {
+        return chatRepository.findPendingChatForUser(id, pageable)
+                .map(chat -> ChatConverter.modelToResponse(chat, Page.empty()));
     }
 }

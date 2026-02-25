@@ -21,7 +21,6 @@ public class CustomUserDetails implements UserDetails {
     private String email;
     private String password;
     private String authorities;
-    //private AuthProvider authProvider; TODO: Add support for multiple auth providers (google)
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
