@@ -19,8 +19,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/chats")
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Chat Controller", description = "Controller responsible for chat management operations, including creating, retrieving, accepting, and closing chats.")
 public class ChatController {
     private final ChatService chatService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @GetMapping
     @Operation(summary = "Get Pending Chat for User", description = "Retrieves the pending chat for the authenticated user, if one exists.")
@@ -282,7 +286,9 @@ public class ChatController {
     @PostMapping
     public ResponseEntity<ChatResponseDTO> createChat(@Valid @RequestBody ChatRequestDTO request,
                                                       @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(chatService.requestChat(userDetails.getId(), request));
+        ChatResponseDTO chat = chatService.requestChat(userDetails.getId(), request);
+        messagingTemplate.convertAndSend("/topic/chat/updates", chat);
+        return ResponseEntity.ok(chat);
     }
 
     @Operation(summary = "Accept a Chat", description = "Accepts a pending chat request.")
@@ -311,6 +317,7 @@ public class ChatController {
             @Parameter(description = "ID of the chat to accept") @PathVariable String chatId,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
         chatService.acceptChat(chatId, userDetails.getId());
+        messagingTemplate.convertAndSend("/topic/chat/updates", (Object) Map.of("chatId", chatId, "status", "ACCEPTED"));
         return ResponseEntity.ok().build();
     }
 
@@ -340,6 +347,63 @@ public class ChatController {
             @Parameter(description = "ID of the chat to close") @PathVariable String chatId,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
         chatService.closeChat(chatId, userDetails.getId());
+        return ResponseEntity.ok().build();
+    }
+    @GetMapping("/history")
+    @Operation(summary = "Get Chat History for User", description = "Retrieves closed chats for the authenticated user.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved chat history"),
+        @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                        name = "Chat History Authentication Error",
+                        summary = "Example of an authentication error response when trying to retrieve chat history without being authenticated",
+                        value = """
+                            {
+                                "timestamp": "2026-02-24T23:32:14.043425400Z",
+                                "status": 401,
+                                "error": "Access Denied",
+                                "message": "Full authentication is required to access this resource",
+                                "path": "/chats/history"
+                            }
+                            """
+                )
+        ))
+    })
+    public ResponseEntity<Page<ChatResponseDTO>> getChatHistory(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "Pagination and sorting information for chat history")
+            @PageableDefault(size = 20, sort = "closedAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(chatService.getChatHistoryForUser(userDetails.getId(), pageable));
+    }
+
+    @Operation(summary = "Reject a Chat", description = "Rejects a pending chat request.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Chat rejected successfully"),
+        @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                        name = "Chat Rejection Authentication Error",
+                        summary = "Example of an authentication error response when trying to reject a chat without being authenticated",
+                        value = """
+                                {
+                                    "timestamp": "2026-02-24T23:32:14.043425400Z",
+                                    "status": 401,
+                                    "error": "Access Denied",
+                                    "message": "Full authentication is required to access this resource",
+                                    "path": "/chats/{chatId}/reject"
+                                }
+                                """
+                )
+        )),
+        @ApiResponse(responseCode = "404", description = "Chat not found", content = @Content)
+    })
+    @PatchMapping("/{chatId}/reject")
+    public ResponseEntity<Void> rejectChat(
+            @Parameter(description = "ID of the chat to reject") @PathVariable String chatId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
+        chatService.rejectChat(chatId, userDetails.getId());
+        messagingTemplate.convertAndSend("/topic/chat/updates", (Object) Map.of("chatId", chatId, "status", "REJECTED"));
         return ResponseEntity.ok().build();
     }
 }

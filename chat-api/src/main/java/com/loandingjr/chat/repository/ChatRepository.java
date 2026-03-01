@@ -55,4 +55,19 @@ public interface ChatRepository extends JpaRepository<Chat, String> {
             AND c.status IN ('ACTIVE')
         """)
     boolean isChatActive(String chatId);
+    @Query("""
+        SELECT c.id AS id,
+                c.status AS status,
+                u1.username AS initiatorUsername,
+                u2.username AS participantUsername,
+                c.createdAt AS createdAt,
+                c.closedAt AS closedAt,
+                c.aiReport AS aiReport
+        FROM Chat c
+        JOIN c.initiator u1 ON c.initiator.id = u1.id
+        JOIN c.participant u2 ON c.participant.id = u2.id
+        WHERE (c.initiator.id = :userId OR c.participant.id = :userId)
+        AND c.status = 'CLOSED'
+        """)
+    Page<ChatResponseProjection> findHistoryForUser(@Param("userId") String id, Pageable pageable);
 }
