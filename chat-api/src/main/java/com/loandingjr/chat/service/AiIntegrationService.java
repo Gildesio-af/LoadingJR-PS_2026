@@ -21,8 +21,8 @@ public class AiIntegrationService {
     private final MessageService messageService;
     private final ChatRepository chatRepository;
 
-//    @Value("${ai.gemini.api-key}")
-    private String apiKey = "AIzaSyCxmydMRkc2qMtuJWgDjsBjBPH5viFhxBg";
+    @Value("${google.api.key:}")
+    private String apiKey;
 
     @Async
     @Transactional

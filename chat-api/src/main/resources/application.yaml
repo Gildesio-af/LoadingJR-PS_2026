@@ -31,12 +31,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
-ai:
-  gemini:
-    api-key: ${GOOGLE_API_KEY}
+google:
+  api:
+    key: ${GOOGLE_API_KEY:AIzaSyBs4Y70GM9ENlyy1Uzil0ZmkWDH-3QRuF4}
 
 app:
-  jwtSecret: ${JWTSECRET:UmaSenhaMuitoLongaEMuitoSeguraParaOAlgoritmoFuncionarCorretamente123456}
+  jwtSecret: ${JWTSECRET:mySecretKey}
   jwtExpirationInMs: ${JWTEXPIRATION:86400000}
 
 logging:

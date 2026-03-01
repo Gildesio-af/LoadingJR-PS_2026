@@ -99,8 +99,28 @@ public class ChatService {
         chatRepository.save(chat);
     }
 
+    public void rejectChat(String chatId, String participantId) {
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new EntityNotFoundException("Chat with ID " + chatId + " does not exist"));
+
+        if (chat.getStatus() != ChatStatus.PENDING)
+            throw new ChatStatusException("Chat with ID " + chatId + " is not in a pending state");
+
+        if (!chat.getParticipant().getId().equals(participantId))
+            throw new UserChatAccessException("User with ID " + participantId + " is not the participant of this chat");
+
+        chat.setStatus(ChatStatus.CLOSED);
+        chat.setAiReport("Chat request was rejected by the participant.");
+        chat.setClosedAt(LocalDateTime.now());
+        chatRepository.save(chat);
+    }
+
     public @Nullable Page<ChatResponseDTO> getPendingChatForUser(String id, Pageable pageable) {
         return chatRepository.findPendingChatForUser(id, pageable)
+                .map(chat -> ChatConverter.modelToResponse(chat, Page.empty()));
+    }
+    public Page<ChatResponseDTO> getChatHistoryForUser(String id, Pageable pageable) {
+        return chatRepository.findHistoryForUser(id, pageable)
                 .map(chat -> ChatConverter.modelToResponse(chat, Page.empty()));
     }
 }
