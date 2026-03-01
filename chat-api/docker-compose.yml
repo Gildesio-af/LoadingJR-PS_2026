@@ -5,14 +5,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '8082:8080'
+      - '8080:8080'
     environment:
 
       SPRING_DATASOURCE_URL: jdbc:postgresql://chat-db:5432/chatdb
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
 
-#      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
 
       APP_JWTSECRET: ${JWT_SECRET}
 
