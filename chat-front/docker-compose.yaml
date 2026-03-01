@@ -1,0 +1,7 @@
+services:
+  chat-front:
+    build: .
+    container_name: loading_chat_front
+    ports:
+      - '80:80'
+    restart: always
